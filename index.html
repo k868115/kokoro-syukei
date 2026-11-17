@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>『こころ』模擬法廷　集計</title>
+<style>
+:root{--ink:#20252b;--muted:#666e78;--k:#3f6ea8;--s:#c4553b;--line:#e5e1da;--bg:#f4f2ee;--warn:#b3261e;--warn-bg:#fdecea}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic',sans-serif}
+.app{max-width:1400px;margin:0 auto;padding:18px;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.5fr);gap:18px;align-items:start}
+.panel{background:#fff;border:1px solid var(--line);border-radius:24px;box-shadow:0 14px 50px #2222220d;padding:20px 22px}
+header{grid-column:1/-1;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:20px;margin:0 auto 0 0}
+.court-pick{display:flex;align-items:center;gap:8px;font-weight:700}
+select{font:inherit;font-size:17px;font-weight:700;padding:8px 36px 8px 14px;border:1px solid #cfcac2;border-radius:12px;background:#fff;color:var(--ink);cursor:pointer}
+select:focus,input:focus{outline:3px solid #316da133;border-color:#316da1}
+/* result */
+.result{text-align:center;position:sticky;top:18px}
+.court{font-size:14px;color:var(--muted);margin:0}
+.st{font-size:clamp(15px,1.6vw,19px);font-weight:700;line-height:1.6;min-height:3.2em;display:flex;align-items:center;justify-content:center;margin:4px 0 0;transition:color .3s}
+svg{display:block;width:min(430px,100%);height:auto;margin:0 auto}
+#needleG{transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
+.nums{display:flex;justify-content:space-between;gap:12px;margin-top:2px;text-align:left}
+.nums .s{text-align:right}
+.lab{font-size:13px;font-weight:700}
+.big{font-size:clamp(30px,4.4vw,46px);font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
+.big small{font-size:17px;margin-left:2px}
+.sum{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.k{color:var(--k)}.s{color:var(--s)}
+.count{margin-top:12px;font-size:14px;color:var(--muted)}
+.count b{color:var(--ink);font-size:18px}
+.alert{margin-top:12px;background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13.5px;font-weight:700;text-align:left}
+.alert[hidden]{display:none}
+/* table */
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-size:12.5px;font-weight:700;text-align:left;padding:4px 6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th.num{text-align:center}
+td{padding:5px 6px;border-bottom:1px solid #f0ece6;vertical-align:middle}
+td.n{width:2em;color:var(--muted);font-size:13px;text-align:center}
+td.v{width:6.2em}
+td.nmc{width:8.5em}
+td.chk{width:7.5em;font-size:12px;font-weight:700;white-space:nowrap}
+input{font:inherit;font-size:15px;width:100%;border:1px solid #ddd8d0;border-radius:10px;padding:8px 10px;color:var(--ink);background:#fff}
+input[type=number]{text-align:right}
+textarea.rs{font:inherit;font-size:14px;line-height:1.5;width:100%;border:1px solid #ddd8d0;border-radius:10px;padding:8px 10px;color:var(--ink);background:#fff;resize:none;overflow:hidden;display:block;min-height:38px}
+textarea.rs:focus{outline:3px solid #316da133;border-color:#316da1}
+td{vertical-align:top}
+td.n,td.chk{padding-top:15px}
+td.v input.kk{color:var(--k);font-weight:700}
+td.v input.ss{color:var(--s);font-weight:700}
+tr.bad td{background:var(--warn-bg)}
+tr.bad input[type=number]{border-color:var(--warn)}
+.ok{color:#2f6b3d}.ng{color:var(--warn)}.wait{color:var(--muted);font-weight:400}
+tfoot td{font-weight:800;border-bottom:none;border-top:2px solid var(--ink);padding-top:10px;font-size:15px}
+tfoot td.k,tfoot td.s{text-align:right;padding-right:16px}
+.note{font-size:12px;color:var(--muted);margin:10px 0 0}
+.tools{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+button{font:inherit;font-size:14px;border:1px solid #d9d5ce;background:#faf9f6;padding:9px 18px;border-radius:999px;color:var(--ink);cursor:pointer}
+button:hover{background:#eeeae4}
+.toast{font-size:12.5px;color:#2f6b3d;text-align:right;min-height:1.3em;margin-top:6px}
+button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+button.primary:hover{background:#3a414a}
+button:focus-visible{outline:3px solid #316da1;outline-offset:2px}
+.print-only{display:none}
+.dlg{position:fixed;inset:0;background:#20252b80;display:grid;place-items:center;z-index:10;padding:16px}
+.dlg[hidden]{display:none}
+.dlg-box{background:#fff;border-radius:18px;padding:22px 24px;width:min(440px,100%);font-size:15px;line-height:1.8;box-shadow:0 20px 60px #0003}
+.dlg-box ul{margin:8px 0 0;padding-left:1.3em;font-size:14px;color:var(--warn)}
+.dlg-box small{color:var(--muted)}
+.dlg-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+@media print{
+ @page{size:A4;margin:14mm 14mm}
+ html,body{background:#fff}
+ .app,.dlg{display:none!important}
+ #pr{display:block!important;font-size:11.5px;color:var(--ink)}
+ #pr .ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px solid var(--ink);padding-bottom:5px;margin-bottom:9px}
+ #pr .ph b{font-size:15.5px}
+ #pr .ph span{font-size:11.5px;color:var(--muted)}
+ #pr .sum{display:grid;grid-template-columns:58mm 1fr;gap:6mm;align-items:center;border:1px solid #cfcac2;border-radius:3mm;padding:3.5mm 5mm;margin-bottom:6mm;break-inside:avoid}
+ #pr .sum svg{width:100%;height:auto}
+ #pr .q{font-size:10.5px;color:var(--muted);margin:0 0 2px}
+ #pr .st2{font-size:14px;font-weight:700;margin:0 0 5px;line-height:1.5}
+ #pr .pc{display:flex;gap:9mm}
+ #pr .pc div{font-size:10.5px;font-weight:700}
+ #pr .pc b{display:block;font-size:24px;line-height:1.15}
+ #pr .pc span{font-weight:400;color:var(--muted)}
+ #pr table.pt{width:100%;border-collapse:collapse;table-layout:fixed}
+ #pr .pt thead{display:table-header-group}
+ #pr .pt th{font-size:10.5px;background:#efece7;padding:2mm 2mm;text-align:left;border:1px solid #cfcac2}
+ #pr .pt td{padding:2mm;border:1px solid #d9d4cc;vertical-align:top;font-size:11.5px;line-height:1.6;word-break:break-word}
+ #pr .pt tr{break-inside:avoid}
+ #pr .pt .c{text-align:center}
+ #pr .pt td.k,#pr .pt td.s{font-weight:700}
+ #pr .pt tr.x td{background:#faf3f2}
+ #pr .pt tfoot td{font-weight:800;border-top:1.5px solid var(--ink)}
+ #pr .m{color:var(--muted);font-size:10px}
+ #pr .rz{white-space:pre-wrap}
+}
+@media(max-width:860px){.app{grid-template-columns:1fr}.result{position:static}}
+</style></head><body>
+<div id="pr" class="print-only"></div>
+<div class="app">
+<header>
+ <h1>『こころ』模擬法廷　集計</h1>
+ <label class="court-pick">法廷
+  <select id="court"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select>
+ </label>
+ <button type="button" id="pdf" class="primary">PDFで書き出す</button>
+</header>
+
+<section class="panel result">
+ <p class="court" id="courtName"></p>
+ <p class="st" id="st"></p>
+ <svg viewBox="0 0 440 262" aria-hidden="true">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3f6ea8"/><stop offset=".45" stop-color="#cfd6df"/><stop offset=".55" stop-color="#e9d8d1"/><stop offset="1" stop-color="#c4553b"/></linearGradient></defs>
+  <path d="M 40 220 A 180 180 0 0 1 400 220" fill="none" stroke="#ece8e2" stroke-width="46" stroke-linecap="round"/>
+  <path d="M 40 220 A 180 180 0 0 1 400 220" fill="none" stroke="url(#g)" stroke-width="30" stroke-linecap="round"/>
+  <g id="ticks"></g>
+  <text x="40" y="256" text-anchor="middle" font-size="14" font-weight="700" fill="#3f6ea8">K自身</text>
+  <text x="400" y="256" text-anchor="middle" font-size="14" font-weight="700" fill="#c4553b">先生の行為</text>
+  <g id="needleG" style="transform-origin:220px 220px">
+   <line x1="220" y1="220" x2="220" y2="62" stroke="#2e343c" stroke-width="7" stroke-linecap="round"/>
+   <circle id="knob" cx="220" cy="40" r="22" fill="#7b7f86" stroke="#fff" stroke-width="5"/>
+  </g>
+  <circle cx="220" cy="220" r="18" fill="#2e343c"/>
+ </svg>
+ <div class="nums">
+  <div class="k"><div class="lab">K自身の側（平均）</div><div class="big"><span id="kAvg">–</span><small>％</small></div><div class="sum">合計 <span id="kSum">0</span></div></div>
+  <div class="s"><div class="lab">先生の行為の側（平均）</div><div class="big"><span id="sAvg">–</span><small>％</small></div><div class="sum">合計 <span id="sSum">0</span></div></div>
+ </div>
+ <p class="count">集計した裁判官 <b id="cnt">0</b> 人</p>
+ <div class="alert" id="alert" role="alert" hidden></div>
+</section>
+
+<section class="panel">
+ <table>
+  <thead><tr><th></th><th>裁判官の名前</th><th class="num k">K自身の側（％）</th><th class="num s">先生の行為の側（％）</th><th>理由（簡潔に）</th><th>確認</th></tr></thead>
+  <tbody id="rows"></tbody>
+  <tfoot><tr><td></td><td>合計</td><td class="k" id="fk">0</td><td class="s" id="fs">0</td><td></td><td></td></tr></tfoot>
+ </table>
+ <p class="note">2つの数値の合計が100にならない行は、入力ミスとして集計に入りません。</p>
+</section>
+</div>
+
+<div class="dlg" id="dlg" hidden><div class="dlg-box" role="alertdialog" aria-modal="true" aria-labelledby="dlgMsg"><div id="dlgMsg"></div><div class="dlg-btns"><button type="button" id="dlgNo"></button><button type="button" id="dlgOk" class="primary"></button></div></div></div>
+<script>
+'use strict';
+const ROWS=12,KEY='kokoro-tally-v2';
+const $=id=>document.getElementById(id);
+const store={get(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}},set(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}};
+let data=store.get();
+['A','B','C','D','E'].forEach(c=>{if(!Array.isArray(data[c]))data[c]=[];});
+const sel=$('court');sel.value=data._cur||'A';
+function save(){data._cur=sel.value;store.set(data);}
+
+/* gauge */
+const CX=220,CY=220,R=180,ticks=$('ticks');
+for(let i=0;i<=10;i++){const a=Math.PI*(1-i/10),big=i%5===0,r1=R+(big?26:23),r2=R+(big?40:32);const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',CX+r1*Math.cos(a));l.setAttribute('y1',CY-r1*Math.sin(a));l.setAttribute('x2',CX+r2*Math.cos(a));l.setAttribute('y2',CY-r2*Math.sin(a));l.setAttribute('stroke',big?'#9aa1aa':'#cfd3d8');l.setAttribute('stroke-width',big?3:2);l.setAttribute('stroke-linecap','round');ticks.appendChild(l);}
+function mix(a,b,t){const p=x=>[1,3,5].map(i=>parseInt(x.substr(i,2),16));const A=p(a),B=p(b);return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')+')';}
+function stance(n){if(n<=20)return 'Kの死の原因は、主にK自身の側にある。';if(n<50)return '先生の行為よりも、K自身の側に原因がある。';if(n===50)return 'K自身と先生の行為、判断が分かれた。';if(n<80)return 'K自身の側よりも、先生の行為に原因がある。';return 'Kの死の原因は、主に先生の行為にある。';}
+
+/* rows */
+const tbody=$('rows'),rowEls=[];
+for(let i=0;i<ROWS;i++){
+ const tr=document.createElement('tr');
+ tr.innerHTML='<td class="n">'+(i+1)+'</td><td class="nmc"><input class="nm" aria-label="'+(i+1)+'人目の名前"></td><td class="v"><input class="kk" type="number" min="0" max="100" step="1" inputmode="numeric" aria-label="'+(i+1)+'人目 K自身の側"></td><td class="v"><input class="ss" type="number" min="0" max="100" step="1" inputmode="numeric" aria-label="'+(i+1)+'人目 先生の行為の側"></td><td><textarea class="rs" rows="1" aria-label="'+(i+1)+'人目 理由"></textarea></td><td class="chk"></td>';
+ tbody.appendChild(tr);rowEls.push(tr);
+ tr.querySelectorAll('input,textarea').forEach(inp=>inp.addEventListener('input',()=>{if(inp.tagName==='TEXTAREA')grow(inp);collect();save();update();}));
+}
+function grow(t){t.style.height='auto';t.style.height=t.scrollHeight+2+'px';}
+function load(){
+ const list=data[sel.value];
+ rowEls.forEach((tr,i)=>{const r=list[i]||{};tr.querySelector('.nm').value=r.name||'';tr.querySelector('.kk').value=r.k??'';tr.querySelector('.ss').value=r.s??'';tr.querySelector('.rs').value=r.reason||'';grow(tr.querySelector('.rs'));});
+}
+function collect(){
+ data[sel.value]=rowEls.map(tr=>({name:tr.querySelector('.nm').value,k:tr.querySelector('.kk').value,s:tr.querySelector('.ss').value,reason:tr.querySelector('.rs').value}));
+}
+function check(r){
+ const hasK=r.k!=='',hasS=r.s!=='',hasN=(r.name||'').trim()!=='',hasR=(r.reason||'').trim()!=='';
+ if(!hasK&&!hasS&&!hasN&&!hasR)return {st:'empty'};
+ if(!hasK||!hasS)return {st:'wait',msg:'数値を2つ入力'};
+ const k=+r.k,s=+r.s;
+ if([k,s].some(v=>isNaN(v)||v<0||v>100||!Number.isInteger(v)))return {st:'bad',msg:'0〜100の整数で'};
+ if(k+s!==100)return {st:'bad',msg:'合計'+(k+s)+'になっている'};
+ if(!hasN)return {st:'wait',msg:'名前を入力',k,s,ok:true};
+ return {st:'ok',k,s};
+}
+function update(){
+ const list=data[sel.value]||[];
+ let n=0,kSum=0,sSum=0;const bad=[];
+ rowEls.forEach((tr,i)=>{
+  const c=check(list[i]||{name:'',k:'',s:''}),cell=tr.querySelector('.chk');
+  tr.classList.toggle('bad',c.st==='bad');
+  cell.innerHTML=c.st==='ok'?'<span class="ok">✓ OK</span>':c.st==='bad'?'<span class="ng">⚠ '+c.msg+'</span>':c.st==='wait'?'<span class="wait">'+c.msg+'</span>':'';
+  if(c.st==='bad')bad.push(i+1);
+  if(c.st==='ok'||c.ok){n++;kSum+=c.k;sSum+=c.s;}
+ });
+ $('courtName').textContent='法廷'+sel.value+'の判断';
+ $('cnt').textContent=n;$('kSum').textContent=kSum;$('sSum').textContent=sSum;$('fk').textContent=kSum;$('fs').textContent=sSum;
+ const al=$('alert');
+ if(bad.length){al.hidden=false;al.textContent='⚠ 入力ミスがあります（'+bad.join('・')+'番）。2つの数値の合計が100になるように直してください。';}else al.hidden=true;
+ const needle=$('needleG'),knob=$('knob'),st=$('st');
+ if(n){
+  const avg=sSum/n;
+  $('sAvg').textContent=Math.round(avg*10)/10;$('kAvg').textContent=Math.round((100-avg)*10)/10;
+  needle.style.transform='rotate('+((avg-50)*1.8)+'deg)';
+  knob.setAttribute('fill',avg<50?mix('#7b7f86','#3f6ea8',(50-avg)/50):mix('#7b7f86','#c4553b',(avg-50)/50));
+  const r=Math.round(avg);st.textContent=stance(r);st.style.color=r<50?'#2f5687':r>50?'#a3422c':'#20252b';
+ }else{
+  $('sAvg').textContent='–';$('kAvg').textContent='–';needle.style.transform='rotate(0deg)';knob.setAttribute('fill','#7b7f86');
+  st.textContent='裁判官の数値を入力してください。';st.style.color='';
+ }
+}
+sel.addEventListener('change',()=>{save();load();update();});
+
+/* ---- PDF書き出し ---- */
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function fillPrint(){
+ const d=new Date(),ds=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+ const svgEl=document.querySelector('.result svg');
+ const gh=svgEl.outerHTML.replace(/id="g"/,'id="pg"').replace(/url\(#g\)/,'url(#pg)').replace(/ id="(ticks|needleG|knob)"/g,'');
+ const list=data[sel.value]||[];
+ let n=0,kS=0,sS=0;const rows=[];
+ list.forEach((r,i)=>{const c=check(r);if(c.st==='empty')return;const valid=c.st==='ok'||c.ok;if(valid){n++;kS+=c.k;sS+=c.s;}
+  rows.push('<tr'+(valid?'':' class="x"')+'><td class="c">'+(i+1)+'</td><td>'+esc((r.name||'').trim()||'（名前なし）')+'</td><td class="c k">'+(r.k===''?'–':esc(r.k))+'</td><td class="c s">'+(r.s===''?'–':esc(r.s))+'</td><td class="rz">'+(esc((r.reason||'').trim())||'<span class="m">（記入なし）</span>')+(valid?'':'<div class="m">※入力ミス・未入力のため集計に含まない</div>')+'</td></tr>');});
+ const avg=n?sS/n:null;
+ document.getElementById('pr').innerHTML=
+  '<div class="ph"><b>『こころ』模擬法廷　集計　法廷'+sel.value+'</b><span>'+ds+'</span></div>'
+ +'<div class="sum"><div class="g">'+gh+'</div><div><p class="q">法廷'+sel.value+'の判断（裁判官'+n+'人の平均）</p><p class="st2">'+(n?stance(Math.round(avg)):'（集計できるデータがありません）')+'</p>'
+ +'<div class="pc"><div class="k">K自身の側<b>'+(n?Math.round((100-avg)*10)/10:'–')+'％</b><span>合計 '+kS+'</span></div><div class="s">先生の行為の側<b>'+(n?Math.round(avg*10)/10:'–')+'％</b><span>合計 '+sS+'</span></div></div></div></div>'
+ +'<table class="pt"><colgroup><col style="width:9mm"><col style="width:30mm"><col style="width:20mm"><col style="width:22mm"><col></colgroup><thead><tr><th></th><th>裁判官</th><th class="k">K自身の側</th><th class="s">先生の行為の側</th><th>理由</th></tr></thead><tbody>'
+ +(rows.join('')||'<tr><td colspan="5" class="m c">入力がありません</td></tr>')
+ +'</tbody><tfoot><tr><td></td><td>合計</td><td class="c k">'+kS+'</td><td class="c s">'+sS+'</td><td></td></tr></tfoot></table>';
+}
+window.addEventListener('beforeprint',fillPrint);
+function doPrint(){fillPrint();const old=document.title;document.title='こころ模擬法廷_集計_法廷'+sel.value;window.print();setTimeout(()=>document.title=old,1000);}
+const embedded=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+const dlg=$('dlg'),dlgMsg=$('dlgMsg'),dlgOk=$('dlgOk'),dlgNo=$('dlgNo');let onOk=null;
+function ask(html,ok,no,cb){dlgMsg.innerHTML=html;dlgOk.textContent=ok;dlgNo.textContent=no;onOk=cb;dlg.hidden=false;dlgOk.focus();}
+function closeDlg(){dlg.hidden=true;onOk=null;}
+dlgOk.addEventListener('click',()=>{const f=onOk;closeDlg();if(f)f();});
+dlgNo.addEventListener('click',closeDlg);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dlg.hidden)closeDlg();});
+function startExport(){
+ if(embedded){ask('この画面ではPDFを書き出せないことがあります。<br>新しいタブで開いてから、もう一度「PDFで書き出す」を押してください。<br><small>（入力した内容は新しいタブにも残っています）</small>','新しいタブで開く','閉じる',()=>window.open(location.href,'_blank'));return;}
+ doPrint();
+}
+$('pdf').addEventListener('click',()=>{
+ const list=data[sel.value]||[];const bad=[],noR=[];
+ rowEls.forEach((tr,i)=>{const r=list[i]||{name:'',k:'',s:'',reason:''};const c=check(r);if(c.st==='empty')return;if(c.st==='bad'||c.st==='wait')bad.push(i+1);else if(!(r.reason||'').trim())noR.push(i+1);});
+ if(bad.length||noR.length){
+  let h='<b>まだ未入力・入力ミスの箇所がありますが、いいですか？</b><ul>';
+  if(bad.length)h+='<li>数値または名前：'+bad.join('・')+'番</li>';
+  if(noR.length)h+='<li>理由：'+noR.join('・')+'番</li>';
+  ask(h+'</ul>','このまま書き出す','戻って入力する',startExport);
+ }else startExport();
+});
+load();update();
+</script></body></html>
